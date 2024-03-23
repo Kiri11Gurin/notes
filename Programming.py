@@ -3908,9 +3908,11 @@ print(asizeof.asized(obj, detail=2).format())  # [1, 2, (3, 4), 'text'] size=328
 
 # ЧЕРЕПАШЬЯ ГРАФИКА
 # import turtle
-# turtle.Screen().colormode(255)
+from random import randrange
 # В Python 3 для того, чтобы использовать цвет в формате RGB,
-# нужно предварительно установить значение colormode в 255.
+# нужно предварительно установить значение colormode в 255:
+# turtle.Screen().colormode(255)
+
 '''
 def turtle_1():
     turtle.forward(100)
@@ -3979,6 +3981,7 @@ def turtle_3():
     turtle.setx(-300)  # устанавливает координату x, у не меняется
     turtle.sety(-300)  # устанавливает координату у, х не меняется
 
+
 # turtle_3()
 
 
@@ -3996,9 +3999,6 @@ def turtle_4():
 # turtle_4()
 '''
 '''
-from random import randrange
-
-
 def move_turtles(turtles, dist, angle):
     for turtle in turtles:    # все черепашки из списка делают одни и те же действия
         turtle.forward(dist)
@@ -4052,7 +4052,6 @@ turtle.Screen().onkey(move_right, 'Right')  # регистрируем функ�
 turtle.done()  # предотвращает закрытие холста, аналогично turtle.mainloop()
 '''
 '''
-from random import randrange
 turtle.speed(0)
 def random_color():
     return randrange(256), randrange(256), randrange(256)
@@ -4080,7 +4079,6 @@ turtle.Screen().listen()
 turtle.mainloop()
 '''
 '''
-import turtle
 turtle.Screen().bgcolor('blue')
 moon = turtle.Turtle()
 moon.hideturtle()
@@ -4100,6 +4098,7 @@ while 1:
 
 # ВИЗУАЛИЗАЦИЯ ДАННЫХ
 # МОДУЛЬ MATPLOTLIB
+# import matplotlib.pyplot as plt
 '''
 input_values = [1, 2, 3, 4, 5]  # значения по x
 squares = [1, 4, 9, 16, 25]  # значения по y
