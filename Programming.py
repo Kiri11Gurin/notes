@@ -3345,46 +3345,46 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-# import pandas as pd
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-# from sklearn import preprocessing
-# from sklearn import tree
-# from sklearn.cluster import KMeans
-# from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
-# from sklearn.linear_model import LinearRegression, SGDClassifier
-# from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
-# from sklearn.neighbors import KNeighborsClassifier
-# from sklearn.preprocessing import StandardScaler
-# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn import preprocessing
+from sklearn import tree
+from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.linear_model import LinearRegression, SGDClassifier
+from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
 '''
-# print(df.info())
-# print(df.head())  # первые 5 строк таблицы
-# print(df.tail())  # последние 5 строк таблицы
-# print(df['Age'].describe())  # для числовых данных
-# print(df['Chocolate'].value_counts())  # для нечисловых данных
-# print(df.describe())  # полное описание таблицы
-# print(df['Growth'].mean)  # происходит автоматическое округление
-# print(df[['Growth', 'Weight', 'Age']])  # для выбора нескольких столбцов нужны двойные квадратные скобки
-# print(df[df['Growth'] < df['Growth'].mean()])
+print(df.info(), end='\n\n')
+print(df.head(), end='\n\n')  # первые 5 строк таблицы
+print(df.tail(), end='\n\n')  # последние 5 строк таблицы
+print(df['Age'].describe(), end='\n\n')  # для числовых данных
+print(df['Chocolate'].value_counts(), end='\n\n')  # для нечисловых данных
+print(df.describe(), end='\n\n')  # описание всех столбцов таблицы
+print(df['Growth'].mean, end='\n\n')  # происходит автоматическое округление
+print(df[['Growth', 'Weight', 'Age']], end='\n\n')  # для выбора нескольких столбцов нужны двойные квадратные скобки
+print(df[df['Growth'] < df['Growth'].mean()], end='\n\n')
 df_cut = df[['Age', 'Growth', 'Weight']]
-# print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]))  # сортировка по нескольким столбцам
-# print(df_cut.iloc[0])  # вывод первой строки
-# df_cut['Mass index'] = 10000 * df_cut['Weight'] / df_cut['Growth'] ** 2  # добавление столбца в таблицу
-# print(df_cut)
-# print(df_cut.corr())  # Коэффициент корреляции. 
+print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]), end='\n\n')  # сортировка по нескольким столбцам
+print(df_cut.iloc[0], end='\n\n')  # вывод первой строки
+df_cut['Mass index'] = 10000 * df_cut['Weight'] / df_cut['Growth'] ** 2  # добавление столбца в таблицу
+print(df_cut, end='\n\n')
+print(df_cut.corr(), end='\n\n')  # коэффициент корреляции
 # Зависимость между столбцами присутствует, если значение больше 0.5.
 # Если значение меньше 0, то зависимость обратная.
-# print(df.groupby('Sex')[['Growth', 'Weight']].mean())  # группировка
-# print(df.groupby(['Sex', 'Glasses'])[['Growth', 'Weight']].mean())  # группировка по нескольким признакам
+print(df.groupby('Sex')[['Growth', 'Weight']].mean(), end='\n\n')  # группировка
+print(df.groupby(['Sex', 'Glasses'])[['Growth', 'Weight']].mean(), end='\n\n')  # группировка по нескольким признакам
 df1 = df.dropna()  # удалить строки, где заполнены не все столбцы
-# print(df1)
-df2 = df.fillna(0)  # заполнить пропущенные ячейки нулями
-# print(df2)
+print(df1, end='\n\n')
+df2 = df.fillna(0)  # заполнить пустые ячейки нулями
+print(df2, end='\n\n')
 df3 = df.copy()
-df3['Weight'] = df['Weight'].fillna(df['Weight'].mean())  # заполнение пропусков в столбце средними значениями
-# print(df['Weight'].describe())
-# print(df3['Weight'].describe())
+df3['Weight'] = df['Weight'].fillna(df['Weight'].mean())  # заполнение пустых ячеек в столбце средними значениями
+print(df['Weight'].describe(), end='\n\n')
+print(df3['Weight'].describe(), end='\n\n')
 '''
 '''
 # поиск и удаление аномальных данных
@@ -3414,10 +3414,10 @@ plt.show()
 print(df_cut)
 sns.scatterplot(data=df_cut, x='Weight', y='Growth', hue='Sex')  # реальные данные
 plt.show()
-print(sum((df_cut['Sex'] == 'мужской') & (df_cut['Label'] == 1)) / df_cut.shape[0])  # доля угаданных
-print(sum((df_cut['Sex'] == 'женский') & (df_cut['Label'] == 0)) / df_cut.shape[0])  # доля угаданных
-print(sum((df_cut['Sex'] == 'мужской') & (df_cut['Label'] == 0)) / df_cut.shape[0])  # доля не угаданных
-print(sum((df_cut['Sex'] == 'женский') & (df_cut['Label'] == 1)) / df_cut.shape[0])  # доля не угаданных
+print(sum((df_cut['Sex'] == 'мужской') & (df_cut['Label'] == 1)) / df_cut.shape[0])  # доля угаданных мужчин
+print(sum((df_cut['Sex'] == 'женский') & (df_cut['Label'] == 0)) / df_cut.shape[0])  # доля угаданных женщин
+print(sum((df_cut['Sex'] == 'мужской') & (df_cut['Label'] == 0)) / df_cut.shape[0])  # доля не угаданных мужчин
+print(sum((df_cut['Sex'] == 'женский') & (df_cut['Label'] == 1)) / df_cut.shape[0])  # доля не угаданных жунщин
 '''
 '''
 # линейная регрессия
@@ -4102,8 +4102,8 @@ while 1:
 '''
 input_values = [1, 2, 3, 4, 5]  # значения по x
 squares = [1, 4, 9, 16, 25]  # значения по y
-plt.grid(lw=1, ls='-')  # добавление сетки на график
-plt.plot(input_values, squares, linewidth=5, color='red')  # lw = linewidth
+plt.grid(lw=1, ls='-')  # добавление сетки на график (lw - linewidth)
+plt.plot(input_values, squares, linewidth=5, color='red')
 plt.plot(input_values, squares, lw=12, color='black', zorder=0)  # zorder=0 - поместить график на задний план
 plt.title('Square Numbers', fontsize=24)
 plt.xlabel('Value', fontsize=14)
@@ -4122,7 +4122,7 @@ plt.show()
 '''
 x_values = list(range(-1000, 1001))
 y_values = [x**2 for x in x_values]
-# меньшие значения y_values светлее, большие значения - темнее (можно сделать с=x_values)
+# Меньшие значения y_values светлее, большие значения - темнее (можно сделать с=x_values):
 plt.scatter(x_values, y_values, c=y_values, cmap=plt.cm.Reds, s=40)  # cmap - цветовая карта
 # path = 'C:\\Users\\gurin\\Downloads\\Python\\picture.png'
 # plt.savefig(path, bbox_inches='tight') # 2-ой аргумент отсекает лишние пропуски
@@ -4276,10 +4276,10 @@ plt.show()
 '''
 
 # МОДУЛЬ SEABORN
-# import pandas as pd
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
 '''
 sns.displot(data=df, x='Growth')
 sns.displot(data=df, x='Growth', kind='kde')
