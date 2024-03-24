@@ -3345,18 +3345,18 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn import preprocessing
-from sklearn import tree
-from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
-from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
-df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
+# import pandas as pd
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+# from sklearn import preprocessing
+# from sklearn import tree
+# from sklearn.cluster import KMeans
+# from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+# from sklearn.linear_model import LinearRegression, SGDClassifier
+# from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
+# from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.preprocessing import StandardScaler
+# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
 '''
 print(df.info(), end='\n\n')
 print(df.head(), end='\n\n')  # первые 5 строк таблицы
@@ -4276,10 +4276,10 @@ plt.show()
 '''
 
 # МОДУЛЬ SEABORN
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
+# import pandas as pd
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
 '''
 sns.displot(data=df, x='Growth')
 sns.displot(data=df, x='Growth', kind='kde')
