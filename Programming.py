@@ -3356,18 +3356,20 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 # from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
 # from sklearn.neighbors import KNeighborsClassifier
 # from sklearn.preprocessing import StandardScaler
-# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
+# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
 '''
+print(df.columns, end='\n\n')  # список всех столбцов
 print(df.info(), end='\n\n')
 print(df.head(), end='\n\n')  # первые 5 строк таблицы
 print(df.tail(), end='\n\n')  # последние 5 строк таблицы
 print(df['Age'].describe(), end='\n\n')  # для числовых данных
-print(df['Chocolate'].value_counts(), end='\n\n')  # для нечисловых данных
+print(df['Chocolate'].value_counts(), end='\n\n')  # для нечисловых (категориальных) данных
+print(df['Glasses'].value_counts(dropna=False), end='\n\n')  # dropna=False отображает пропуски
 print(df.describe(), end='\n\n')  # описание всех столбцов таблицы
 print(df['Growth'].mean, end='\n\n')  # происходит автоматическое округление
 print(df[['Growth', 'Weight', 'Age']], end='\n\n')  # для выбора нескольких столбцов нужны двойные квадратные скобки
 print(df[df['Growth'] < df['Growth'].mean()], end='\n\n')
-df_cut = df[['Age', 'Growth', 'Weight']]
+df_cut = df[['Age', 'Growth', 'Weight']].copy()  # .copy() нужно, чтобы не было SettingWithCopyWarning
 print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]), end='\n\n')  # сортировка по нескольким столбцам
 print(df_cut.iloc[0], end='\n\n')  # вывод первой строки
 df_cut['Mass index'] = 10000 * df_cut['Weight'] / df_cut['Growth'] ** 2  # добавление столбца в таблицу
@@ -3375,9 +3377,35 @@ print(df_cut, end='\n\n')
 print(df_cut.corr(), end='\n\n')  # коэффициент корреляции
 # Зависимость между столбцами присутствует, если значение больше 0.5.
 # Если значение меньше 0, то зависимость обратная.
-print(df.groupby('Sex')[['Growth', 'Weight']].mean(), end='\n\n')  # группировка
+
+# группировка значений
+print(df.groupby('Sex')[['Growth', 'Weight']].mean(), end='\n\n')
+group = df.groupby('Sex', dropna=False)['Weight'].agg(['count', 'mean'])  # группировка с добавлением 'count'
+print(group)
+print(group['count'].sum())  # проверка совпадает ли результат (157) с общим количеством строк (186)
 print(df.groupby(['Sex', 'Glasses'])[['Growth', 'Weight']].mean(), end='\n\n')  # группировка по нескольким признакам
-df1 = df.dropna()  # удалить строки, где заполнены не все столбцы
+
+# Разбиение категории на 5 равных интервалов по значению 'Weight':
+df['Weight_group'] = pd.cut(df['Weight'], 5)
+weight_group = df.groupby('Weight_group', dropna=False)['Growth'].agg(['count', 'mean'])
+print(weight_group)
+print(weight_group['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
+
+# Разбиение категории на 5 равных интервалов по количеству людей:
+df['Weight_group_q'] = pd.qcut(df['Weight'], 5, duplicates='drop')
+weight_group_q = df.groupby('Weight_group_q', dropna=False)['Growth'].agg(['count', 'mean'])  # группировка
+print(weight_group_q)
+print(weight_group_q['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
+
+# Разбиение категории на произвольное количество интервалов любых значений:
+df['Weight_group_custom'] = pd.cut(df['Weight'], [-float('inf'), 50, 75, 90, float('inf')])
+weight_group_custom = df.groupby('Weight_group_custom', dropna=False)['Growth'].agg(['count', 'mean'])
+print(weight_group_custom)
+print(weight_group_custom['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
+
+df = df.drop(['Weight_group', 'Weight_group_q', 'Weight_group_custom'], axis=1)  # удалить столбцы
+print(df.isna().mean().sort_values(ascending=False), end='\n\n')  # доля незаполненных данных по каждому столбцу
+df1 = df.dropna()  # удалить строки, где заполнены не все ячейки
 print(df1, end='\n\n')
 df2 = df.fillna(0)  # заполнить пустые ячейки нулями
 print(df2, end='\n\n')
