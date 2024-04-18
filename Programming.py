@@ -3345,18 +3345,22 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-# import pandas as pd
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-# from sklearn import preprocessing
-# from sklearn import tree
-# from sklearn.cluster import KMeans
-# from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
-# from sklearn.linear_model import LinearRegression, SGDClassifier
-# from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
-# from sklearn.neighbors import KNeighborsClassifier
-# from sklearn.preprocessing import StandardScaler
-# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn import preprocessing
+from sklearn import tree
+from sklearn.cluster import KMeans
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.linear_model import LinearRegression, SGDClassifier
+from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+import phik
+from phik.report import plot_correlation_matrix
+from phik import report
+df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
+df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
 '''
 print(df.columns, end='\n\n')  # список всех столбцов
 print(df.info(), end='\n\n')
@@ -3372,38 +3376,8 @@ print(df[df['Growth'] < df['Growth'].mean()], end='\n\n')
 df_cut = df[['Age', 'Growth', 'Weight']].copy()  # .copy() нужно, чтобы не было SettingWithCopyWarning
 print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]), end='\n\n')  # сортировка по нескольким столбцам
 print(df_cut.iloc[0], end='\n\n')  # вывод первой строки
-df_cut['Mass index'] = 10000 * df_cut['Weight'] / df_cut['Growth'] ** 2  # добавление столбца в таблицу
-print(df_cut, end='\n\n')
-print(df_cut.corr(), end='\n\n')  # коэффициент корреляции
-# Зависимость между столбцами присутствует, если значение больше 0.5.
-# Если значение меньше 0, то зависимость обратная.
 
-# группировка значений
-print(df.groupby('Sex')[['Growth', 'Weight']].mean(), end='\n\n')
-group = df.groupby('Sex', dropna=False)['Weight'].agg(['count', 'mean'])  # группировка с добавлением 'count'
-print(group)
-print(group['count'].sum())  # проверка совпадает ли результат (157) с общим количеством строк (186)
-print(df.groupby(['Sex', 'Glasses'])[['Growth', 'Weight']].mean(), end='\n\n')  # группировка по нескольким признакам
-
-# Разбиение категории на 5 равных интервалов по значению 'Weight':
-df['Weight_group'] = pd.cut(df['Weight'], 5)
-weight_group = df.groupby('Weight_group', dropna=False)['Growth'].agg(['count', 'mean'])
-print(weight_group)
-print(weight_group['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
-
-# Разбиение категории на 5 равных интервалов по количеству людей:
-df['Weight_group_q'] = pd.qcut(df['Weight'], 5, duplicates='drop')
-weight_group_q = df.groupby('Weight_group_q', dropna=False)['Growth'].agg(['count', 'mean'])  # группировка
-print(weight_group_q)
-print(weight_group_q['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
-
-# Разбиение категории на произвольное количество интервалов любых значений:
-df['Weight_group_custom'] = pd.cut(df['Weight'], [-float('inf'), 50, 75, 90, float('inf')])
-weight_group_custom = df.groupby('Weight_group_custom', dropna=False)['Growth'].agg(['count', 'mean'])
-print(weight_group_custom)
-print(weight_group_custom['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
-
-df = df.drop(['Weight_group', 'Weight_group_q', 'Weight_group_custom'], axis=1)  # удалить столбцы
+# заполнение и удаление незаполненных ячеек
 print(df.isna().mean().sort_values(ascending=False), end='\n\n')  # доля незаполненных данных по каждому столбцу
 df1 = df.dropna()  # удалить строки, где заполнены не все ячейки
 print(df1, end='\n\n')
@@ -3413,6 +3387,90 @@ df3 = df.copy()
 df3['Weight'] = df['Weight'].fillna(df['Weight'].mean())  # заполнение пустых ячеек в столбце средними значениями
 print(df['Weight'].describe(), end='\n\n')
 print(df3['Weight'].describe(), end='\n\n')
+
+# добавление нового столбца
+df_cut['Mass index'] = 10000 * df_cut['Weight'] / df_cut['Growth'] ** 2
+print(df_cut, end='\n\n')
+
+
+def new_training_hours(row):
+    if row['education_level'] == 'Phd':
+        return row['training_hours'] + 1000
+    return row['training_hours']
+
+
+df_2['new_training_hours'] = df_2.apply(new_training_hours, axis=1)
+print(df_2[df_2['education_level'] == 'Phd'])
+
+# добавление нового столбца в таблицу на основе другой таблицы
+age = df_2[['enrollee_id']].copy()
+age['age'] = 30
+print(age)
+df_2 = df_2.merge(age, how='left', on='enrollee_id', validate='1:1')  # validate, чтобы не было дубликатов
+print(df_2)
+print(len(df_2))  # проверка на появление дубликатов после join
+df_2 = df_2.drop('age', axis=1)
+
+# корреляция
+# Метод corr() использовать тогда, когда знаем, что корреляция есть, и нужно выяснить между какими признаками сильнее.
+print(df_cut.corr(), end='\n\n')  # коэффициент корреляции
+sns.heatmap(df_cut.corr())  # зависимость между столбцами присутствует, если значение больше 0.5
+plt.show()  # если значение меньше 0, то зависимость обратная
+
+# Для выявления корреляции использовать phik (результат нужно проверить с помощью сводной таблицы):
+phik_overview = df_2.phik_matrix()
+print(phik_overview)
+sns.heatmap(phik_overview)
+plt.show()
+print(phik_overview['target'].sort_values(ascending=False))  # target - хочет ли уволиться сотрудник
+
+# группировка значений
+print(df.groupby('Sex')[['Growth', 'Weight']].mean(), end='\n\n')
+group = df.groupby('Sex', dropna=False)['Weight'].agg(['count', 'mean'])  # группировка с добавлением 'count'
+print(group)  # сводная таблица
+print(group['count'].sum())  # проверка совпадает ли результат (157) с общим количеством строк (186)
+print(df.groupby(['Sex', 'Glasses'])[['Growth', 'Weight']].mean(), end='\n\n')  # группировка по нескольким признакам
+
+# Разбиение категории на 5 равных интервалов по значению 'Weight':
+df['Weight_group'] = pd.cut(df['Weight'], 5)
+weight_group = df.groupby('Weight_group', dropna=False)['Growth'].agg(['count', 'mean'])
+print(weight_group)  # сводная таблица
+print(weight_group['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
+
+# Разбиение категории на 5 равных интервалов по количеству людей (строк):
+df['Weight_group_q'] = pd.qcut(df['Weight'], 5, duplicates='drop')
+weight_group_q = df.groupby('Weight_group_q', dropna=False)['Growth'].agg(['count', 'mean'])  # группировка
+print(weight_group_q)  # сводная таблица
+print(weight_group_q['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
+
+# Разбиение категории на произвольное количество интервалов любых значений:
+df['Weight_group_custom'] = pd.cut(df['Weight'], [-float('inf'), 50, 75, 90, float('inf')])
+weight_group_custom = df.groupby('Weight_group_custom', dropna=False)['Growth'].agg(['count', 'mean'])
+print(weight_group_custom)  # сводная таблица
+print(weight_group_custom['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
+df = df.drop(['Weight_group', 'Weight_group_q', 'Weight_group_custom'], axis=1)  # удалить столбцы
+
+
+# перегруппировка данных (объединение нескольких столбцов в один)
+def education_group(x):
+    if x in ['High School', 'Primary School']:
+        return 'School'
+    if x in ['Masters', 'Phd']:
+        return 'Masters_and_phd'
+    return x
+
+
+print(df_2.groupby('education_level', dropna=False)['target'].agg(['count', 'mean']))
+df_2['new_education_level'] = df_2['education_level'].apply(education_group)
+print(df_2.groupby('new_education_level', dropna=False)['target'].agg(['count', 'mean']), end='\n\n')
+
+# игрушечные данные - маленький DataFrame, чтобы проверить на них какую-то функцию или идею
+t = pd.DataFrame({'col1': [1, 2, 3, float('nan')],
+                  'col2': ['a', 'b', 'c', 'd'],
+                  'col3': [0]*3 + [1]*1,
+                  'col4': [0, 0, 0, 1]})
+print(t)
+print(t['col1'].sum(), t['col1'].mean(), t['col1'].count())
 '''
 '''
 # поиск и удаление аномальных данных
