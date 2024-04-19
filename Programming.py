@@ -3353,7 +3353,8 @@ from sklearn import tree
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
 from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
+from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support, mean_absolute_percentage_error
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 import phik
@@ -3361,6 +3362,7 @@ from phik.report import plot_correlation_matrix
 from phik import report
 df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
 df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
+df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
 '''
 print(df.columns, end='\n\n')  # список всех столбцов
 print(df.info(), end='\n\n')
@@ -3376,6 +3378,20 @@ print(df[df['Growth'] < df['Growth'].mean()], end='\n\n')
 df_cut = df[['Age', 'Growth', 'Weight']].copy()  # .copy() нужно, чтобы не было SettingWithCopyWarning
 print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]), end='\n\n')  # сортировка по нескольким столбцам
 print(df_cut.iloc[0], end='\n\n')  # вывод первой строки
+
+train, test = train_test_split(df_3, random_state=42)  # разбиение данных на 2 выборки для обучения модели и теста
+plt.hist(train['price'])
+plt.show()
+print(train.groupby('year')['price'].agg(['count', 'mean', 'median']))  # сводная таблица
+train.groupby('year')['price'].median().plot()
+plt.show()
+
+sns.displot(data=df, x='Growth')
+sns.displot(data=df, x='Growth', kind='kde')
+plt.show()
+
+sns.countplot(data=df, x='Sex', hue='Animal')
+plt.show()
 
 # заполнение и удаление незаполненных ячеек
 print(df.isna().mean().sort_values(ascending=False), end='\n\n')  # доля незаполненных данных по каждому столбцу
@@ -3440,7 +3456,7 @@ print(weight_group['count'].sum())  # проверка совпадает ли �
 # Разбиение категории на 5 равных интервалов по количеству людей (строк):
 df['Weight_group_q'] = pd.qcut(df['Weight'], 5, duplicates='drop')
 weight_group_q = df.groupby('Weight_group_q', dropna=False)['Growth'].agg(['count', 'mean'])  # группировка
-print(weight_group_q)  # сводная таблица
+print(weight_group_q)  # сводная таблица ('count' получились неравные из-за наличия одинаковых значений 'Weight')
 print(weight_group_q['count'].sum())  # проверка совпадает ли результат (186) с общим количеством строк (186)
 
 # Разбиение категории на произвольное количество интервалов любых значений:
@@ -3518,11 +3534,12 @@ print(results.coef_, results.intercept_)
 df_cut['Predicted growth'] = results.predict(df_cut['Shoe size'].values.reshape(-1, 1))
 print(df_cut)
 print(mean_absolute_error(df_cut['Growth'], df_cut['Predicted growth']))  # погрешность предсказаний
+print(mean_absolute_percentage_error(df_cut['Growth'], df_cut['Predicted growth']))  # погрешность предсказаний
 '''
 '''
 # линейная регрессия
 # предсказание целевого признака по двум нецелевым признакам: 'Middle and ring finger', 'Middle and little finger'
-df_cut = df[['MIddle and index finger', 'Middle and ring finger', 'Middle and little finger']]
+df_cut = df[['MIddle and index finger', 'Middle and ring finger', 'Middle and little finger']].copy()
 linear_regression = LinearRegression()
 results = linear_regression.fit(df_cut[['Middle and ring finger', 'Middle and little finger']].values.reshape(-1, 2),
                                 y=df_cut['MIddle and index finger'].values)
@@ -3531,6 +3548,7 @@ df_cut['Predicted'] = results.predict(df_cut[['Middle and ring finger',
                                               'Middle and little finger']].values.reshape(-1, 2))
 print(df_cut[['MIddle and index finger', 'Predicted']])
 print(mean_absolute_error(df_cut['Predicted'], df_cut['MIddle and index finger']))  # 3.094567105647603
+print(mean_absolute_percentage_error(df_cut['Predicted'], df_cut['MIddle and index finger']))  # 0.3192124845366315
 '''
 '''
 # метод k ближайших соседей; предсказание категориального признака (классификация) 
@@ -3625,11 +3643,11 @@ sns.scatterplot(data=df_test_cut, x='Weight', y='Growth', hue='Code')
 plt.show()
 '''
 '''
-# оцифровка категориальных признаков
+# преобразование категориальных признаков в bool
 df1 = pd.get_dummies(df, drop_first=True)  # drop_first удаление 1-ой колонки, чтобы избежать избыточности информации
 print(df1.info())
 
-# замена категориальных признаков на числовые
+# замена категориальных признаков на числовые (оцифровка категориальных признаков)
 coder = preprocessing.LabelEncoder()
 for name in df.select_dtypes(include=['object']).columns:  # все категориальные признаки
     coder.fit(df[name])
@@ -3691,6 +3709,7 @@ df_test_cut = df_test_cut.dropna()
 df_test_cut['Predicted'] = model.predict(df_test_cut[['Weight', 'Hair length', 'Shoe size']].values.reshape(-1, 3))
 print(df_test_cut[['Growth', 'Predicted']])
 print(mean_absolute_error(df_test_cut['Growth'], df_test_cut['Predicted']))  # 4.351558902090816
+print(mean_absolute_percentage_error(df_test_cut['Growth'], df_test_cut['Predicted']))  # 0.02538521069383894
 '''
 '''
 # ансамбли алгоритмов
@@ -4358,30 +4377,5 @@ plt.colorbar(label='Color Intensity')
 #plt.plot(rw.x_values, rw.y_values, linewidth=1)
 plt.scatter(0, 0, c='green', s=100)  # выделение первой точки
 plt.scatter(rw.x_values[-1], rw.y_values[-1], c='red', s=100)  # выделение последней точки
-plt.show()
-'''
-
-# МОДУЛЬ SEABORN
-# import pandas as pd
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")
-'''
-sns.displot(data=df, x='Growth')
-sns.displot(data=df, x='Growth', kind='kde')
-plt.show()
-'''
-'''
-sns.scatterplot(data=df, x='Growth', y='Weight', hue='Sex')
-plt.show()
-'''
-'''
-# построение диаграммы с категориальными признаками
-sns.countplot(data=df, x='Sex', hue='Animal')
-plt.show()
-'''
-'''
-df_cut = df[['Age', 'Growth', 'Weight', 'Shoe size', 'Sex']]
-sns.pairplot(df_cut, hue='Sex')
 plt.show()
 '''
