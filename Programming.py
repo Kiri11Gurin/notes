@@ -3345,9 +3345,13 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
+import phik
+import seaborn as sns
+from catboost import CatBoostRegressor
+from phik import report
+from phik.report import plot_correlation_matrix
 from sklearn import preprocessing
 from sklearn import tree
 from sklearn.cluster import KMeans
@@ -3357,14 +3361,11 @@ from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
-import phik
-from phik.report import plot_correlation_matrix
-from phik import report
 df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
 df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
 df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
 '''
-print(df.columns, end='\n\n')  # список всех столбцов
+print(df.columns, end='\n\n')  # список всех столбцов (список фичей)
 print(df.info(), end='\n\n')
 print(df.head(), end='\n\n')  # первые 5 строк таблицы
 print(df.tail(), end='\n\n')  # последние 5 строк таблицы
@@ -3379,17 +3380,16 @@ df_cut = df[['Age', 'Growth', 'Weight']].copy()  # .copy() нужно, чтоб�
 print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]), end='\n\n')  # сортировка по нескольким столбцам
 print(df_cut.iloc[0], end='\n\n')  # вывод первой строки
 
-train, test = train_test_split(df_3, random_state=42)  # разбиение данных на 2 выборки для обучения модели и теста
-plt.hist(train['price'])
+# визуализация данных
+plt.hist(df_3['price'])
+plt.grid(True)
 plt.show()
-print(train.groupby('year')['price'].agg(['count', 'mean', 'median']))  # сводная таблица
-train.groupby('year')['price'].median().plot()
+print(df_3.groupby('year')['price'].agg(['count', 'mean', 'median']))  # сводная таблица
+df_3.groupby('year')['price'].median().plot()
 plt.show()
-
 sns.displot(data=df, x='Growth')
 sns.displot(data=df, x='Growth', kind='kde')
 plt.show()
-
 sns.countplot(data=df, x='Sex', hue='Animal')
 plt.show()
 
@@ -3772,6 +3772,69 @@ df_test_cut.loc[(df_test_cut['Sex'] == 'женский') & (df_test_cut['Predict
 sns.scatterplot(data=df_test_cut, x='Weight', y='Growth', hue='Code')
 plt.show()
 '''
+
+# машинное обучение с помощью модуля catboost
+pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
+pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
+train, test = train_test_split(df_3, train_size=0.6, random_state=42)  # разбиение данных на 2 выборки
+val, test = train_test_split(test, train_size=0.5, random_state=42)  # разбиение на валидационную и тестовую выборки
+X = ['model', 'year', 'transmission', 'mileage', 'fuelType', 'tax', 'mpg', 'engineSize']  # нецелевые признаки
+y = ['price']  # целевой признак
+cat_features = ['model', 'transmission', 'fuelType']  # категориальные признаки
+parameters = {'cat_features': cat_features,
+              'learning_rate': 0.08,  # отрегулировать так, чтобы 'bestTest' был ближе к тысячной итерации
+              'eval_metric': 'MAPE',  # mean absolute percentage error
+              'random_seed': 42,
+              'verbose': 100}  # выводить каждую сотую итерацию
+model = CatBoostRegressor(**parameters)
+model.fit(train[X], train[y], eval_set=(val[X], val[y]))
+test['price_pred'] = model.predict(test[X])
+print(model.best_iteration_)
+print(mean_absolute_error(test['price'], test['price_pred']))
+print(mean_absolute_percentage_error(test['price'], test['price_pred']))
+
+# # обучение на всех данных (объединение train и val)
+# train_full = pd.concat([train, val])
+# parameters = {'iterations': model.best_iteration_ + 1,
+#               'cat_features': cat_features,
+#               'eval_metric': 'MAPE',
+#               'learning_rate': 0.08,
+#               'random_seed': 42,
+#               'verbose': 100}
+# model = CatBoostRegressor(**parameters)
+# model.fit(train_full[X], train_full[y])
+# test['price_pred_all'] = model.predict(test[X])
+# print(mean_absolute_error(test['price'], test['price_pred_all']))
+# print(mean_absolute_percentage_error(test['price'], test['price_pred_all']))
+
+# анализ ошибок
+test['error'] = test['price_pred'] - test['price']
+# plt.hist(test['error'])
+# plt.grid(True)
+# plt.show()
+test['error_abs'] = abs(test['error'])  # абсолютная ошибка
+# plt.hist(test['error_abs'])
+# plt.grid(True)
+# plt.show()
+print(test['error_abs'].describe(), end='\n\n')
+print(test.sort_values('error_abs', ascending=False))  # сортировка по самым большим ошибкам
+
+
+# анализ абсолютной ошибки
+def print_error(col):
+    t = test.groupby(col)[['error_abs', 'error']].agg(['count', 'mean'])
+    t.columns = ['_'.join(col).strip() for col in t.columns.values]  # убрать мультииндекс названий столбцов
+    t = t.drop('error_count', axis=1)  # удалить повторяющийся столбец
+    t['mean_error_diff'] = t['error_abs_mean'] - test['error_abs'].mean()
+    t['mean_error'] = test['error_abs'].mean()  # добавление столбца со средней ошибкой
+    print(t, end='\n\n')
+
+
+test['price_group'] = pd.qcut(test['price'], 5)
+print_error('price_group')
+print_error('year')
+print(test, end='\n\n')
+
 
 '''
 # МОДУЛЬ OS
