@@ -3349,36 +3349,44 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import phik
 import seaborn as sns
-from catboost import CatBoostRegressor
+import shap
+from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 from phik import report
 from phik.report import plot_correlation_matrix
 from sklearn import preprocessing
 from sklearn import tree
 from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.metrics import mean_absolute_error, precision_recall_fscore_support, mean_absolute_percentage_error
+from sklearn.metrics import log_loss, precision_recall_fscore_support
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
 df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
 df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
+df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
+pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
+pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
 '''
 print(df.columns, end='\n\n')  # список всех столбцов (список фичей)
 print(df.info(), end='\n\n')
 print(df.head(), end='\n\n')  # первые 5 строк таблицы
 print(df.tail(), end='\n\n')  # последние 5 строк таблицы
-print(df['Age'].describe(), end='\n\n')  # для числовых данных
-print(df['Chocolate'].value_counts(), end='\n\n')  # для нечисловых (категориальных) данных
+print(df['Age'].describe(), end='\n\n')  # описание столбца для числовых данных
+print(df['Chocolate'].value_counts(), end='\n\n')  # описание столбца для нечисловых (категориальных) данных
+print(df['Sex'].value_counts(normalize=True), end='\n\n')  # вывод данных в долях
 print(df['Glasses'].value_counts(dropna=False), end='\n\n')  # dropna=False отображает пропуски
 print(df.describe(), end='\n\n')  # описание всех столбцов таблицы
 print(df['Growth'].mean, end='\n\n')  # происходит автоматическое округление
 print(df[['Growth', 'Weight', 'Age']], end='\n\n')  # для выбора нескольких столбцов нужны двойные квадратные скобки
 print(df[df['Growth'] < df['Growth'].mean()], end='\n\n')
 df_cut = df[['Age', 'Growth', 'Weight']].copy()  # .copy() нужно, чтобы не было SettingWithCopyWarning
+print(df_cut.rename({'Age': 'col1', 'Weight': 'col3'}, axis=1))  # переименование столбцов, не сохраняя названия
 print(df_cut.sort_values(by=['Age', 'Growth'], ascending=[True, True]), end='\n\n')  # сортировка по нескольким столбцам
 print(df_cut.iloc[0], end='\n\n')  # вывод первой строки
+print(df_4.select_dtypes(include='object'))  # выбор категориальных признаков
 
 # визуализация данных
 plt.hist(df_3['price'])
@@ -3772,10 +3780,8 @@ df_test_cut.loc[(df_test_cut['Sex'] == 'женский') & (df_test_cut['Predict
 sns.scatterplot(data=df_test_cut, x='Weight', y='Growth', hue='Code')
 plt.show()
 '''
-
-# машинное обучение с помощью модуля catboost
-pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
-pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
+'''
+# машинное обучение с помощью модуля catboost (задача регрессии)
 train, test = train_test_split(df_3, train_size=0.6, random_state=42)  # разбиение данных на 2 выборки
 val, test = train_test_split(test, train_size=0.5, random_state=42)  # разбиение на валидационную и тестовую выборки
 X = ['model', 'year', 'transmission', 'mileage', 'fuelType', 'tax', 'mpg', 'engineSize']  # нецелевые признаки
@@ -3793,29 +3799,29 @@ print(model.best_iteration_)
 print(mean_absolute_error(test['price'], test['price_pred']))
 print(mean_absolute_percentage_error(test['price'], test['price_pred']))
 
-# # обучение на всех данных (объединение train и val)
-# train_full = pd.concat([train, val])
-# parameters = {'iterations': model.best_iteration_ + 1,
-#               'cat_features': cat_features,
-#               'eval_metric': 'MAPE',
-#               'learning_rate': 0.08,
-#               'random_seed': 42,
-#               'verbose': 100}
-# model = CatBoostRegressor(**parameters)
-# model.fit(train_full[X], train_full[y])
-# test['price_pred_all'] = model.predict(test[X])
-# print(mean_absolute_error(test['price'], test['price_pred_all']))
-# print(mean_absolute_percentage_error(test['price'], test['price_pred_all']))
+# обучение на всех данных (объединение train и val)
+train_full = pd.concat([train, val])
+parameters = {'iterations': model.best_iteration_ + 1,
+              'cat_features': cat_features,
+              'eval_metric': 'MAPE',
+              'learning_rate': 0.08,
+              'random_seed': 42,
+              'verbose': 100}
+model = CatBoostRegressor(**parameters)
+model.fit(train_full[X], train_full[y])
+test['price_pred_all'] = model.predict(test[X])
+print(mean_absolute_error(test['price'], test['price_pred_all']))
+print(mean_absolute_percentage_error(test['price'], test['price_pred_all']))
 
 # анализ ошибок
 test['error'] = test['price_pred'] - test['price']
-# plt.hist(test['error'])
-# plt.grid(True)
-# plt.show()
+plt.hist(test['error'])
+plt.grid(True)
+plt.show()
 test['error_abs'] = abs(test['error'])  # абсолютная ошибка
-# plt.hist(test['error_abs'])
-# plt.grid(True)
-# plt.show()
+plt.hist(test['error_abs'])
+plt.grid(True)
+plt.show()
 print(test['error_abs'].describe(), end='\n\n')
 print(test.sort_values('error_abs', ascending=False))  # сортировка по самым большим ошибкам
 
@@ -3834,6 +3840,83 @@ test['price_group'] = pd.qcut(test['price'], 5)
 print_error('price_group')
 print_error('year')
 print(test, end='\n\n')
+print(model.get_feature_importance(prettified=True))  # оценка важности параметров
+
+# модуль shap
+shap.initjs()
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(test[X])
+print(train['price'].mean())
+# Насколько сильно каждый параметр смещает цену (price_pred равна сумме каждой фичи и средней цены):
+print(pd.DataFrame(shap_values, columns=X))
+shap.force_plot(explainer.expected_value, shap_values[0, :], test[X].iloc[0, :], matplotlib=True, show=True)
+
+# создание общей таблицы на основе shap и test
+shap_cols = [x+'_shap' for x in X]
+shap_values_df = pd.DataFrame(shap_values, columns=shap_cols)
+test_shap = pd.concat([test.reset_index(), shap_values_df], axis=1)
+test_shap = test_shap.sort_values('error_abs', ascending=False)
+print(test_shap)
+shap.force_plot(explainer.expected_value, test_shap[shap_cols].values[0, :],
+                test_shap[X].iloc[0, :], matplotlib=True, show=True)
+plot = shap.force_plot(explainer.expected_value, test_shap[shap_cols].head(10).values,
+                       test_shap[X].head(10), show=False)
+shap.save_html(r"C:/Users/gurin/Downloads/Python/uk-used-cars/index.htm", plot)
+plot_2 = shap.force_plot(explainer.expected_value, test_shap[shap_cols].values, test_shap[X], show=False)
+shap.save_html(r"C:/Users/gurin/Downloads/Python/uk-used-cars/index_2.htm", plot_2)
+shap.dependence_plot("year", shap_values, test[X], show=True, interaction_index='model')
+shap.summary_plot(shap_values, test[X], show=True)  # серым подсвечены категориальные признаки
+'''
+
+# машинное обучение с помощью модуля catboost (задача классификации (уйдёт ли клиент из компании))
+# В задачах классификации нужно указывать параметр stratify, чтобы была равная доля по целевому признаку (Exited):
+train, test = train_test_split(df_4, train_size=0.6, random_state=42, stratify=df_4['Exited'])
+val, test = train_test_split(test, train_size=0.5, random_state=42, stratify=test['Exited'])
+train_full = pd.concat([train, val])
+phik_overview = train_full.drop('Surname', axis=1).phik_matrix()
+print(phik_overview['Exited'].sort_values(ascending=False))
+X = ['CustomerId', 'CreditScore', 'Geography', 'Gender', 'Age', 'Tenure', 'Balance',
+     'NumOfProducts', 'HasCrCard', 'IsActiveMember', 'EstimatedSalary']
+cat_features = ['Geography', 'Gender']
+y = ['Exited']
+train_data = Pool(data=train[X],
+                  label=train[y],
+                  cat_features=cat_features)
+valid_data = Pool(data=val[X],
+                  label=val[y],
+                  cat_features=cat_features)
+params = {'verbose': 100,
+          'random_seed': 42,
+          'learning_rate': 0.01}
+model = CatBoostClassifier(**params)
+model.fit(train_data, eval_set=valid_data)
+# Добавление в таблицу score (score - оценка склонности оттока людей из компании):
+test['score_cat_prod_age_active_all_features'] = model.predict_proba(test[X])[:, 1]
+print(test)  # в данном случае score равен вероятности, но так происходит не всегда
+print(test['score_cat_prod_age_active_all_features'].nunique(), len(test))
+
+
+def uplift(df, score, pct):
+    exited_all = df['Exited'].sum()
+    df = df.sort_values(score, ascending=False)
+    exited_found = df.head(round(len(df) * pct))['Exited'].sum()
+    return (exited_found / exited_all) / pct
+
+
+def print_metrics(df, score):
+    print(log_loss(df['Exited'], df[score]))
+    print(uplift(df, score, 0.2))
+
+
+print_metrics(test, 'score_cat_prod_age_active_all_features')
+print(model.get_feature_importance(prettified=True))
+
+# модуль shap
+shap.initjs()
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(test[X])
+shap.summary_plot(shap_values, test[X], show=True)  # серым подсвечены категориальные признаки
+shap.dependence_plot("NumOfProducts", shap_values, test[X], show=True, interaction_index='Age')
 
 
 '''
