@@ -3358,8 +3358,9 @@ from sklearn import tree
 from sklearn.cluster import KMeans
 from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.metrics import log_loss, precision_recall_fscore_support
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
+    f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
+    precision_score, recall_score, roc_auc_score, roc_curve
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -3789,7 +3790,7 @@ y = ['price']  # целевой признак
 cat_features = ['model', 'transmission', 'fuelType']  # категориальные признаки
 parameters = {'cat_features': cat_features,
               'learning_rate': 0.08,  # отрегулировать так, чтобы 'bestTest' был ближе к тысячной итерации
-              'eval_metric': 'MAPE',  # mean absolute percentage error
+              'eval_metric': 'MAPE',  # mean absolute percentage error (можно попробовать подставить AUC)
               'random_seed': 42,
               'verbose': 100}  # выводить каждую сотую итерацию
 model = CatBoostRegressor(**parameters)
@@ -3867,7 +3868,7 @@ shap.save_html(r"C:/Users/gurin/Downloads/Python/uk-used-cars/index_2.htm", plot
 shap.dependence_plot("year", shap_values, test[X], show=True, interaction_index='model')
 shap.summary_plot(shap_values, test[X], show=True)  # серым подсвечены категориальные признаки
 '''
-
+'''
 # машинное обучение с помощью модуля catboost (задача классификации (уйдёт ли клиент из компании))
 # В задачах классификации нужно указывать параметр stratify, чтобы была равная доля по целевому признаку (Exited):
 train, test = train_test_split(df_4, train_size=0.6, random_state=42, stratify=df_4['Exited'])
@@ -3891,9 +3892,8 @@ params = {'verbose': 100,
 model = CatBoostClassifier(**params)
 model.fit(train_data, eval_set=valid_data)
 # Добавление в таблицу score (score - оценка склонности оттока людей из компании):
-test['score_cat_prod_age_active_all_features'] = model.predict_proba(test[X])[:, 1]
-print(test)  # в данном случае score равен вероятности, но так происходит не всегда
-print(test['score_cat_prod_age_active_all_features'].nunique(), len(test))
+test['score_catboost'] = model.predict_proba(test[X])[:, 1]  # в некоторых случаях score равен
+print(test['score_catboost'].nunique(), len(test))  # вероятности, но так происходит не всегда
 
 
 def uplift(df, score, pct):
@@ -3908,7 +3908,7 @@ def print_metrics(df, score):
     print(uplift(df, score, 0.2))
 
 
-print_metrics(test, 'score_cat_prod_age_active_all_features')
+print_metrics(test, 'score_catboost')
 print(model.get_feature_importance(prettified=True))
 
 # модуль shap
@@ -3917,7 +3917,68 @@ explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(test[X])
 shap.summary_plot(shap_values, test[X], show=True)  # серым подсвечены категориальные признаки
 shap.dependence_plot("NumOfProducts", shap_values, test[X], show=True, interaction_index='Age')
+test['y_pred'] = (test['score_catboost'] > 0.5) * 1
+print(test)
 
+# метрики классификации
+print(confusion_matrix(test['Exited'], test['y_pred']))  # матрица ошибок
+# Составляющие матрицы ошибок (confusion matrix):
+# true negative - истинно-отрицательный
+# false positive - ложно-положительный, ошибка I рода (ложное срабатывание)
+# false negative - ложно-отрицательный, ошибка II рода (ложный пропуск)
+# true positive - истинно-положительный
+tn, fp, fn, tp = confusion_matrix(test['Exited'], test['y_pred']).ravel()
+recall = tp / (tp + fn)  # полнота (TPR - true positive rate)
+print(recall)  # 0.4643734643734644
+print(recall_score(test['Exited'], test['y_pred']))  # 0.4643734643734644
+precision = tp / (tp + fp)  # точность
+print(precision)  # 0.7714285714285715
+print(precision_score(test['Exited'], test['y_pred']))  # 0.7714285714285715
+f1 = (2 * recall * precision) / (recall + precision)
+print(f1)  # 0.5797546012269938
+print(f1_score(test['Exited'], test['y_pred']))  # 0.5797546012269938
+print((test['Exited'] == test['y_pred']).mean())  # accuracy
+print((tp + tn) / (tp + tn + fp + fn))  # accuracy (аналогично предыдущему)
+print(accuracy_score(test['Exited'], test['y_pred']))  # accuracy (аналогично предыдущему)
+print(classification_report(test['Exited'], test['y_pred']))
+
+# предикт с другим порогом (общее количество порогов равно количеству уникальных значений скоров плюс 1)
+thrs = [0] + list(test['score_catboost'].unique())  # thresholds
+result = []
+for thr in thrs:
+    test['y_pred_new'] = (test['score_catboost'] > thr) * 1
+    result.append((thr, f1_score(test['Exited'], test['y_pred_new'])))
+t = pd.DataFrame(result, columns=['thr', 'f1'])
+print(t.sort_values('f1', ascending=False))
+t.plot(x='thr', y='f1', style='o', grid=True)
+plt.show()
+
+# ROC - receiver operating characteristic, рабочая характеристика приёмника, кривая зависимости TPR от FPR
+fprs, tprs, thrs = roc_curve(test['Exited'], test['score_catboost'])
+roc = pd.DataFrame({'fpr': fprs, 'tpr': tprs, 'thr': thrs})
+print(roc)
+roc['random'] = roc['fpr']
+roc['ideal'] = 1
+roc.plot(x='fpr', y=['tpr', 'random', 'ideal'], figsize=(6, 6), grid=True)
+plt.show()
+
+# 2-ой способ построения ROC-curve:
+fpr, tpr, threshold = roc_curve(test['Exited'], test['score_catboost'])
+roc_auc = auc(fpr, tpr)
+plt.title('Receiver Operating Characteristic')
+plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
+plt.legend(loc='lower right')
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
+
+# AUC - area under curve, площадь под кривой
+print(roc_auc_score(test['Exited'], test['score_catboost']))
+print(average_precision_score(test['Exited'], test['score_catboost']))
+'''
 
 '''
 # МОДУЛЬ OS
