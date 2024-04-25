@@ -3345,31 +3345,31 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-import matplotlib.pyplot as plt
-import pandas as pd
-import phik
-import seaborn as sns
-import shap
-from catboost import CatBoostClassifier, CatBoostRegressor, Pool
-from phik import report
-from phik.report import plot_correlation_matrix
-from sklearn import preprocessing
-from sklearn import tree
-from sklearn.cluster import KMeans
-from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
-    f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
-    precision_score, recall_score, roc_auc_score, roc_curve
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
-df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
-df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
-df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
-df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
-pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
-pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
+# import matplotlib.pyplot as plt
+# import pandas as pd
+# import phik
+# import seaborn as sns
+# import shap
+# from catboost import CatBoostClassifier, CatBoostRegressor, cv, Pool
+# from phik import report
+# from phik.report import plot_correlation_matrix
+# from sklearn import preprocessing
+# from sklearn import tree
+# from sklearn.cluster import KMeans
+# from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
+# from sklearn.linear_model import LinearRegression, SGDClassifier
+# from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
+#     f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
+#     precision_score, recall_score, roc_auc_score, roc_curve
+# from sklearn.model_selection import train_test_split
+# from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.preprocessing import StandardScaler
+# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
+# df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
+# df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
+# df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
+# pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
+# pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
 '''
 print(df.columns, end='\n\n')  # список всех столбцов (список фичей)
 print(df.info(), end='\n\n')
@@ -3978,6 +3978,28 @@ plt.show()
 # AUC - area under curve, площадь под кривой
 print(roc_auc_score(test['Exited'], test['score_catboost']))
 print(average_precision_score(test['Exited'], test['score_catboost']))
+
+# кросс-валидация
+train_full_data = Pool(train_full[X],
+                       label=train_full[y],
+                       cat_features=cat_features)
+params = {'verbose': 100,
+          'eval_metric': 'AUC',
+          'loss_function': 'Logloss',
+          'random_seed': 42,
+          'learning_rate': 0.01}
+cv_data = cv(
+    params=params,
+    pool=train_full_data,
+    fold_count=5,
+    shuffle=True,
+    partition_random_seed=0,
+    stratified=False,
+    verbose=False
+)
+model.fit(train_full_data)
+print(cv_data)
+print(cv_data[cv_data['test-AUC-mean'] == cv_data['test-AUC-mean'].max()])
 '''
 
 '''
