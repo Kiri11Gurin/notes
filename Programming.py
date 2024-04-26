@@ -3404,6 +3404,7 @@ plt.show()
 
 # заполнение и удаление незаполненных ячеек
 print(df.isna().mean().sort_values(ascending=False), end='\n\n')  # доля незаполненных данных по каждому столбцу
+print(df[df['Children number'].isna()])  # просмотр строк, где незаполненны данные
 df1 = df.dropna()  # удалить строки, где заполнены не все ячейки
 print(df1, end='\n\n')
 df2 = df.fillna(0)  # заполнить пустые ячейки нулями
@@ -3886,6 +3887,9 @@ train_data = Pool(data=train[X],
 valid_data = Pool(data=val[X],
                   label=val[y],
                   cat_features=cat_features)
+test_data = Pool(data=test[X],
+                 label=test[y],
+                 cat_features=cat_features)
 params = {'verbose': 100,
           'random_seed': 42,
           'learning_rate': 0.01}
@@ -4000,6 +4004,20 @@ cv_data = cv(
 model.fit(train_full_data)
 print(cv_data)
 print(cv_data[cv_data['test-AUC-mean'] == cv_data['test-AUC-mean'].max()])
+n_iters = cv_data[cv_data['test-AUC-mean'] == cv_data['test-AUC-mean'].max()]['iterations'].values[0]
+print(n_iters)  # выводит лучшую итерацию по кросс-валидации
+
+# повторное обучения с лучшей итерацией
+params = {'iterations': n_iters,
+          'verbose': 100,
+          'eval_metric': 'AUC',
+          'loss_function': 'Logloss',
+          'random_seed': 42,
+          'learning_rate': 0.01}
+model = CatBoostClassifier(**params)
+model.fit(train_full_data)
+test['y_score_cross_val'] = model.predict_proba(test_data)[:, 1]
+print(roc_auc_score(test['Exited'], test['y_score_cross_val']))
 '''
 
 '''
