@@ -3345,31 +3345,31 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-# import matplotlib.pyplot as plt
-# import pandas as pd
-# import phik
-# import seaborn as sns
-# import shap
-# from catboost import CatBoostClassifier, CatBoostRegressor, cv, Pool
-# from phik import report
-# from phik.report import plot_correlation_matrix
-# from sklearn import preprocessing
-# from sklearn import tree
-# from sklearn.cluster import KMeans
-# from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
-# from sklearn.linear_model import LinearRegression, SGDClassifier
-# from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
-#     f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
-#     precision_score, recall_score, roc_auc_score, roc_curve
-# from sklearn.model_selection import train_test_split
-# from sklearn.neighbors import KNeighborsClassifier
-# from sklearn.preprocessing import StandardScaler
-# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
-# df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
-# df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
-# df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
-# pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
-# pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
+import matplotlib.pyplot as plt
+import pandas as pd
+import phik
+import seaborn as sns
+import shap
+from catboost import CatBoostClassifier, CatBoostRegressor, cv, Pool
+from phik import report
+from phik.report import plot_correlation_matrix
+from sklearn import preprocessing
+from sklearn import tree
+from sklearn.cluster import KMeans
+from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LinearRegression, SGDClassifier
+from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
+    f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
+    precision_score, recall_score, roc_auc_score, roc_curve
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
+pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
+df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
+df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
+df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
+df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
 '''
 print(df.columns, end='\n\n')  # список всех столбцов (список фичей)
 print(df.info(), end='\n\n')
@@ -3428,7 +3428,6 @@ def new_training_hours(row):
 df_2['new_training_hours'] = df_2.apply(new_training_hours, axis=1)
 print(df_2[df_2['education_level'] == 'Phd'])
 
-# добавление нового столбца в таблицу на основе другой таблицы
 age = df_2[['enrollee_id']].copy()
 age['age'] = 30
 print(age)
@@ -3513,6 +3512,47 @@ b = df['Age'].quantile(0.75)
 df = df[(df['Age'] < b + 1.5 * (b - a)) & (df['Age'] > a - 1.5 * (b - a))]
 sns.boxplot(x=df['Age'])  # построение ящика с усами
 plt.show()
+'''
+'''
+# человеческое обучение (задача регрессии)
+train, test = train_test_split(df_3, random_state=42)
+print(df_3.isna().mean())
+phik_overview = df_3.phik_matrix()
+print(phik_overview['price'].sort_values(ascending=False))
+sns.heatmap(phik_overview)
+plt.show()
+
+
+def engine_group(x):
+    if x <= 1.5:
+        return '<=1.5'
+    if x <= 2:
+        return '<=2'
+    return '>2'
+
+
+train['engine_group'] = train['engineSize'].apply(engine_group)  # группировка (способ №1)
+train['year_group'] = pd.cut(train['year'], [0, 2010, 2012, 2014, 2016, 2018, float('inf')])  # группировка (способ №2)
+model_year_engine_trn_group_median = (train.groupby(['year_group',
+                                                     'engine_group',
+                                                     'transmission'])['price'].median().reset_index())
+model_year_engine_trn_group_median = model_year_engine_trn_group_median.rename(
+    {'price': 'price_pred_year_engine_trn_median'}, axis=1)
+print(model_year_engine_trn_group_median)
+train = train.merge(model_year_engine_trn_group_median, how='left', on=['year_group', 'engine_group', 'transmission'])
+print(train)
+print(mean_absolute_error(train['price'], train['price_pred_year_engine_trn_median']))
+print(mean_absolute_percentage_error(train['price'], train['price_pred_year_engine_trn_median']))
+
+# предсказание на тестовых данных
+test['engine_group'] = test['engineSize'].apply(engine_group)
+test['year_group'] = pd.cut(test['year'], [0, 2010, 2012, 2014, 2016, 2018, float('inf')])
+test = test.merge(model_year_engine_trn_group_median, how='left', on=['year_group', 'engine_group', 'transmission'])
+print(test.isna().mean())
+print(test[test['price_pred_year_engine_trn_median'].isna()])
+test_no_na = test.dropna().copy()
+print(mean_absolute_error(test_no_na['price'], test_no_na['price_pred_year_engine_trn_median']))
+print(mean_absolute_percentage_error(test_no_na['price'], test_no_na['price_pred_year_engine_trn_median']))
 '''
 '''
 # кластеризация (распределение данных на несколько групп)
