@@ -3345,31 +3345,31 @@ with open(r"C:/Users/gurin/Downloads/Python/domain_usage_dict.csv", 'w', encodin
 '''
 
 # МОДУЛЬ PANDAS
-import matplotlib.pyplot as plt
-import pandas as pd
-import phik
-import seaborn as sns
-import shap
-from catboost import CatBoostClassifier, CatBoostRegressor, cv, Pool
-from phik import report
-from phik.report import plot_correlation_matrix
-from sklearn import preprocessing
-from sklearn import tree
-from sklearn.cluster import KMeans
-from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LinearRegression, SGDClassifier
-from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
-    f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
-    precision_score, recall_score, roc_auc_score, roc_curve
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
-pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
-pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
-df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
-df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
-df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
-df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
+# import matplotlib.pyplot as plt
+# import pandas as pd
+# import phik
+# import seaborn as sns
+# import shap
+# from catboost import CatBoostClassifier, CatBoostRegressor, cv, Pool
+# from phik import report
+# from phik.report import plot_correlation_matrix
+# from sklearn import preprocessing
+# from sklearn import tree
+# from sklearn.cluster import KMeans
+# from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier
+# from sklearn.linear_model import LinearRegression, SGDClassifier
+# from sklearn.metrics import accuracy_score, auc, average_precision_score, classification_report, confusion_matrix, \
+#     f1_score, log_loss, mean_absolute_error, mean_absolute_percentage_error, precision_recall_fscore_support, \
+#     precision_score, recall_score, roc_auc_score, roc_curve
+# from sklearn.model_selection import train_test_split
+# from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.preprocessing import StandardScaler
+# pd.set_option('display.width', None)  # показывать таблицу во всю ширину экрана
+# pd.set_option('display.max_columns', None)  # показать все столбцы таблицы
+# df = pd.read_csv(r"C:/Users/gurin/Downloads/Python/students.csv")  # df - dataframe
+# df_2 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/aug_train.csv")
+# df_3 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/uk-used-cars/bmw.csv")
+# df_4 = pd.read_csv(r"C:/Users/gurin/Downloads/Python/Churn_Modelling.csv")
 '''
 print(df.columns, end='\n\n')  # список всех столбцов (список фичей)
 print(df.info(), end='\n\n')
@@ -3831,7 +3831,7 @@ y = ['price']  # целевой признак
 cat_features = ['model', 'transmission', 'fuelType']  # категориальные признаки
 parameters = {'cat_features': cat_features,
               'learning_rate': 0.08,  # отрегулировать так, чтобы 'bestTest' был ближе к тысячной итерации
-              'eval_metric': 'MAPE',  # mean absolute percentage error (можно попробовать подставить AUC)
+              'eval_metric': 'MAPE',  # mean absolute percentage error
               'random_seed': 42,
               'verbose': 100}  # выводить каждую сотую итерацию
 model = CatBoostRegressor(**parameters)
@@ -3894,7 +3894,7 @@ print(pd.DataFrame(shap_values, columns=X))
 shap.force_plot(explainer.expected_value, shap_values[0, :], test[X].iloc[0, :], matplotlib=True, show=True)
 
 # создание общей таблицы на основе shap и test
-shap_cols = [x+'_shap' for x in X]
+shap_cols = [x + '_shap' for x in X]
 shap_values_df = pd.DataFrame(shap_values, columns=shap_cols)
 test_shap = pd.concat([test.reset_index(), shap_values_df], axis=1)
 test_shap = test_shap.sort_values('error_abs', ascending=False)
