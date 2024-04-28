@@ -4041,7 +4041,6 @@ cv_data = cv(
     stratified=False,
     verbose=False
 )
-model.fit(train_full_data)
 print(cv_data)
 print(cv_data[cv_data['test-AUC-mean'] == cv_data['test-AUC-mean'].max()])
 n_iters = cv_data[cv_data['test-AUC-mean'] == cv_data['test-AUC-mean'].max()]['iterations'].values[0]
