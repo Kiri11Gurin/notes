@@ -3961,7 +3961,7 @@ explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(test[X])
 shap.summary_plot(shap_values, test[X], show=True)  # серым подсвечены категориальные признаки
 shap.dependence_plot("NumOfProducts", shap_values, test[X], show=True, interaction_index='Age')
-test['y_pred'] = (test['score_catboost'] > 0.5) * 1
+test['y_pred'] = (test['score_catboost'] > 0.5) * 1  # 0.5 - порог (threshold), можно установить другое значение
 print(test)
 
 # метрики классификации
