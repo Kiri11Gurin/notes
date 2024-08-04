@@ -350,6 +350,7 @@ print('Hello {f_name} {s_name}! You just delved into Python'.format(f_name=a, s_
 print('Hello {1} {0}! You just delved into Python'.format(a, b))  # выводит переменные по номерам
 print(f'{x = }, {a=}')  # x = 5, a='Anthony'
 print("{:,.2f}".format(10000001.23554))  # 10,000,001.24 (2f - 2 знака после запятой)
+print(f'{5:02}')  # 05
 '''
 
 '''
@@ -591,7 +592,7 @@ for i in days:
 
 '''
 # ГЕНЕРАТОРЫ СПИСКОВ (LIST COMPREHENSION)
-# работают быстрее, чем цикл for с использованием метода append(), но медленнее, чем list(iterable)
+# работают быстрее, чем цикл for с использованием метода append(), но медленнее, чем функция list(iterable)
 result = [i ** 3 for i in range(1, 100)]
 # отобразим последние 5 значений с помощью слайсинга (среза):
 print(result[-5:])  # [857375, 884736, 912673, 941192, 970299]
@@ -760,12 +761,12 @@ print(d_copy)  # {6: 36, 5: 25, 4: 16, 3: 9, 2: 4, 1: 1, 8: 64, 9: None, 777: 49
 
 dict_1 = {'John': 15, 'Rick': 10, 'Misa': 12}
 dict_2 = {'Bonnie': 18, 'Rick': 20}
-dict_3 = dict_1 | dict_2  # объединение словарей
+dict_3 = dict_1 | dict_2  # объединение словарей, аналогично {**dict_1, **dict_2}
 # Если в словарях присутствуют одинаковые ключи, то значение берётся из последнего словаря:
 print(dict_3)  # {'John': 15, 'Rick': 20, 'Misa': 12, 'Bonnie': 18}
 print(*dict_3)  # John Rick Misa Bonnie
 print({*dict_3}, type({*dict_3}))  # {'John', 'Rick', 'Misa', 'Bonnie'} <class 'set'>
-print({**dict_3})  # {'John': 15, 'Rick': 20, 'Misa': 12, 'Bonnie': 18} (распаковка словаря)
+print({**dict_1, **dict_2})  # {'John': 15, 'Rick': 20, 'Misa': 12, 'Bonnie': 18} (распаковка словаря)
 
 a, b, c = 'qwert', 'zz', 'wthgrttt'
 d = {len(a): a, len(b): b, len(c): c}
@@ -777,6 +778,7 @@ print(min(d), len(a), a)  # 2 5 qwert
 print({'one': 1, 'two': 2} == {'two': 2, 'one': 1})  # True (сравниваются и ключи и значения)
 
 # создание словарей
+print(dict.fromkeys([1, 2, 3]))  # {1: None, 2: None, 3: None}
 dict1 = dict.fromkeys(['name', 'age', 'job'], 'Missed info')  # создание словаря с одним и тем же значением
 print(dict1)  # {'name': 'Missed info', 'age': 'Missed info', 'job': 'Missed info'}
 info_tuple = (['name', 'Timur'], ['age', 28], ['job', 'Teacher'])  # кортеж списков
@@ -789,6 +791,10 @@ keys = ['name', 'age', 'gender']
 values = ['Timur', 28, 'male']
 info = dict(zip(keys, values))
 print(info)  # {'name': 'Timur', 'age': 28, 'gender': 'male'}
+
+# поменять местами ключ и значение в словаре
+new_info = {v: k for k, v in info.items()}
+print(new_info)  # {'Timur': 'name', 28: 'age', 'male': 'gender'}
 
 a = ['S1', 'S2', 'S3', 'S4']
 b = ['Cami', 'Juan', 'Dan', 'Sam', 'Bati']
@@ -988,7 +994,7 @@ print(b, type(b))  # <generator object <genexpr> at 0x00000194BDFD1E70> <class '
 # При новом вызове функции она будет выполняться с того места, на котором остановилась.
 def fact(n):
     pr = 1
-    for i in range(1, n+1):
+    for i in range(1, n + 1):
         pr *= i
         yield i  # метод next() замораживает функцию на этом месте (все локальные переменные сохраняются)
         yield pr  # функция начнёт выполняться с этого места при следующем вызове метода next()
